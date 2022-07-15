@@ -31,4 +31,20 @@ class RestaurantManager:
             Request object containing information about the sent
             request to your application.
         """
-        ...
+        scope = request.scope
+        if scope["type"] == "staff.onduty":
+            self.staff[scope["id"]] = request
+
+        elif scope["type"] == "staff.offduty":
+            del self.staff[scope["id"]]
+
+        elif scope["type"] == "order":
+            speciality = scope["speciality"]
+            for k, v in self.staff.items():
+                if speciality in v.scope["speciality"]:
+                    staff = self.staff[k]
+                    break
+            order = await request.receive()
+            await staff.send(order)
+            result = await staff.receive()
+            await request.send(result)
